@@ -213,13 +213,13 @@ export default function Home() {
                             className={styles.btnBig}>
                             View Floor Price Graph
                           </button>
-                          <button
+                          {/* <button
                             id={collection[1][0].token_address}
                             onClick={getBuyPrices}
                             style={{ margin: "0 0 0 1rem" }}
                             className={styles.btnBig}>
                             View Floor Price Graph
-                          </button>
+                          </button> */}
                         </h1>
                         <hr></hr>
                       </div>
@@ -246,16 +246,16 @@ export default function Home() {
                                 borderRadius: "10px",
                               }}
                             />
-                            {buyPriceArr
-                              ? buyPriceArr.map((buyPrice) => {
-                                  console.log(buyPrice);
-                                  if (nft.token_address == buyPrice[0] && nft.token_id == buyPrice[1]) {
-                                    return <h2 style={{ margin: "1rem" }}>{buyPrice[2]}</h2>;
-                                  }
-                                })
-                              : () => {
-                                  return <h2 style={{ margin: "1rem" }}>Loading...</h2>;
-                                }}
+                            {buyPriceArr ? (
+                              buyPriceArr.map((buyPrice) => {
+                                console.log(buyPrice);
+                                if (nft.token_address == buyPrice[0] && nft.token_id == buyPrice[1]) {
+                                  return <h2 style={{ margin: "1rem" }}>{buyPrice[2]}</h2>;
+                                }
+                              })
+                            ) : (
+                              <h2 style={{ margin: "1rem" }}>Loading...</h2>
+                            )}
                           </div>
                         );
                       })}
