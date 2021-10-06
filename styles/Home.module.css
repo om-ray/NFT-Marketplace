@@ -141,6 +141,7 @@
 }
 
 .btnBig {
+  font-family: "roboto slab";
   padding: 1rem 1.5rem;
   border-radius: 10px;
   background-color: #ffffff;

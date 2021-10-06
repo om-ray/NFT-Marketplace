@@ -7,19 +7,29 @@ import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
-let currentCollection;
+let currentCollection = false;
+let interval = 2000;
 
 export default function Home() {
   let [balance, setBalance] = useState(null);
   let [NFTS, setNFTS] = useState(null);
   let [options, setOptions] = useState({});
   let [series, setSeries] = useState([{}]);
+  let buyPriceArr;
   let web3 = new Web3("https://mainnet.infura.io/v3/85053130ed044a1593252260977bbeb5");
   let address = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed";
   web3.eth.getBalance(address, (err, bal) => {
     bal = web3.utils.fromWei(bal.toString(), "ether");
     setBalance(bal);
   });
+
+  let timestampGen = function () {
+    let today = new Date();
+    let date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    let dateTime = date + " " + time;
+    return dateTime;
+  };
 
   function groupBy(arr, property) {
     return arr.reduce(function (memo, x) {
@@ -51,33 +61,48 @@ export default function Home() {
     });
   };
 
+  let getBuyPrices = function () {
+    buyPriceArr = [];
+    fetch(
+      "https://deep-index.moralis.io/api/v2/0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed/nft/transfers?chain=eth&format=decimal&direction=both",
+      {
+        method: "GET",
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "x-api-key": "Q3Zg3JYiD2uaEbeyeVtHVOfdQDN2ERvqqVX7M15HHa2kXq1uBIy1BpM9hk918OLV",
+        },
+      }
+    ).then((res) => {
+      res.json().then((nfts) => {
+        nfts.result.map((nft) => {
+          buyPriceArr.push([nft.token_address, nft.token_id, web3.utils.fromWei(nft.value, "ether")]);
+          console.log(buyPriceArr);
+        });
+      });
+    });
+  };
+
   let getFloorPrice = function (collection_addr, collection_name) {
     return function () {
       let collectionChanged;
-      if (currentCollection == collection_name) {
-        let today = new Date();
-        let date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
-        let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-        let dateTime = date + " " + time;
-        timeArr.push(dateTime);
-        collectionChanged = false;
-      } else {
-        let today = new Date();
-        let date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
-        let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-        let dateTime = date + " " + time;
-        timeArr = [];
-        timeArr.push(dateTime);
-        currentCollection = collection_name;
-        collectionChanged = true;
-      }
+
       fetch(`https://api.opensea.io/api/v1/collections?asset_owner=${address}&offset=0&limit=300`).then(
         (collections) => {
+          if (currentCollection == collection_name) {
+            collectionChanged = false;
+            let dateTime = timestampGen();
+            timeArr.push(dateTime);
+          } else {
+            collectionChanged = true;
+            timeArr = [];
+            seriesArr = [];
+            let dateTime = timestampGen();
+            timeArr.push(dateTime);
+            currentCollection = collection_name;
+          }
+
           collections.json().then((collections) => {
             collections.map((collection) => {
-              if (collectionChanged) {
-                seriesArr = [];
-              }
               if (collection_addr == collection?.primary_asset_contracts[0]?.address) {
                 seriesArr.push(collection.stats.floor_price);
                 setOptions({
@@ -91,6 +116,42 @@ export default function Home() {
           });
         }
       );
+
+      var autoCall = setInterval(function () {
+        fetch(`https://api.opensea.io/api/v1/collections?asset_owner=${address}&offset=0&limit=300`).then(
+          (collections) => {
+            if (currentCollection == collection_name) {
+              collectionChanged = false;
+              let dateTime = timestampGen();
+              timeArr.push(dateTime);
+            } else {
+              if (!collectionChanged) {
+                clearInterval(autoCall);
+              }
+              collectionChanged = true;
+              timeArr = [];
+              seriesArr = [];
+              let dateTime = timestampGen();
+              timeArr.push(dateTime);
+              currentCollection = collection_name;
+            }
+
+            collections.json().then((collections) => {
+              collections.map((collection) => {
+                if (collection_addr == collection?.primary_asset_contracts[0]?.address) {
+                  seriesArr.push(collection.stats.floor_price);
+                  setOptions({
+                    xaxis: {
+                      categories: timeArr,
+                    },
+                  });
+                  setSeries([{ name: collection_name, data: seriesArr }]);
+                }
+              });
+            });
+          }
+        );
+      }, interval);
     };
   };
 
@@ -146,7 +207,15 @@ export default function Home() {
                         <h1>
                           {collection[0]}
                           <button
+                            id={collection[1][0].token_address}
                             onClick={getFloorPrice(collection[1][0].token_address, collection[0])}
+                            style={{ margin: "0 0 0 1rem" }}
+                            className={styles.btnBig}>
+                            View Floor Price Graph
+                          </button>
+                          <button
+                            id={collection[1][0].token_address}
+                            onClick={getBuyPrices}
                             style={{ margin: "0 0 0 1rem" }}
                             className={styles.btnBig}>
                             View Floor Price Graph
@@ -162,7 +231,7 @@ export default function Home() {
                             style={{
                               float: "left",
                               width: "30%",
-                              height: "21rem",
+                              height: "25rem",
                               margin: "1rem",
                               position: "relative",
                               textAlign: "center",
@@ -177,6 +246,16 @@ export default function Home() {
                                 borderRadius: "10px",
                               }}
                             />
+                            {buyPriceArr
+                              ? buyPriceArr.map((buyPrice) => {
+                                  console.log(buyPrice);
+                                  if (nft.token_address == buyPrice[0] && nft.token_id == buyPrice[1]) {
+                                    return <h2 style={{ margin: "1rem" }}>{buyPrice[2]}</h2>;
+                                  }
+                                })
+                              : () => {
+                                  return <h2 style={{ margin: "1rem" }}>Loading...</h2>;
+                                }}
                           </div>
                         );
                       })}
