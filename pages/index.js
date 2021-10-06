@@ -225,6 +225,7 @@ export default function Home() {
                         let nft_metadata = JSON.parse(nft.metadata);
                         return (
                           <div
+                            key={Math.random * 10000000000000}
                             className={styles.card}
                             style={{
                               float: "left",
