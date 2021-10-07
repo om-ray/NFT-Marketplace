@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
+let buyPrices = [];
 let currentCollection = false;
 let interval = 86400000;
 
@@ -15,7 +16,7 @@ export default function Home() {
   let [NFTS, setNFTS] = useState(null);
   let [options, setOptions] = useState({});
   let [series, setSeries] = useState([{}]);
-  let buyPriceArr;
+  let value;
   let web3 = new Web3("https://mainnet.infura.io/v3/85053130ed044a1593252260977bbeb5");
   let address = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed";
   web3.eth.getBalance(address, (err, bal) => {
@@ -62,7 +63,6 @@ export default function Home() {
   };
 
   let getBuyPrices = function () {
-    buyPriceArr = [];
     fetch(
       "https://deep-index.moralis.io/api/v2/0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed/nft/transfers?chain=eth&format=decimal&direction=both",
       {
@@ -75,8 +75,7 @@ export default function Home() {
     ).then((res) => {
       res.json().then((nfts) => {
         nfts.result.map((nft) => {
-          buyPriceArr.push([nft.token_address, nft.token_id, web3.utils.fromWei(nft.value, "ether")]);
-          console.log(buyPriceArr);
+          buyPrices.push([nft.token_address, nft.token_id, web3.utils.fromWei(nft.value, "ether")]);
         });
       });
     });
@@ -167,6 +166,7 @@ export default function Home() {
       </Head>
 
       <div className={styles.container}>
+        {getBuyPrices()}
         <div className={`${styles.topLeft} ${styles.card}`}>
           <h1 style={{ fontFamily: "playfair display", fontWeight: 900 }}>User Balance:</h1>
           <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
@@ -192,7 +192,10 @@ export default function Home() {
               zIndex: "999999",
               fontFamily: "roboto slab",
             }}
-            onClick={}>
+            onClick={() => {
+              getNFTS();
+              getBuyPrices();
+            }}>
             Refresh
           </button> */}
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -222,10 +225,15 @@ export default function Home() {
                         <hr></hr>
                       </div>
                       {collection[1].map((nft) => {
+                        buyPrices.map((buyPrice) => {
+                          if (buyPrice[0] == nft.token_address && buyPrice[1] == nft.token_id) {
+                            value = buyPrice[2];
+                          }
+                        });
                         let nft_metadata = JSON.parse(nft.metadata);
                         return (
                           <div
-                            key={Math.random * 10000000000000}
+                            key={Math.random() * 10000000000000}
                             className={styles.card}
                             style={{
                               float: "left",
@@ -245,16 +253,9 @@ export default function Home() {
                                 borderRadius: "10px",
                               }}
                             />
-                            {buyPriceArr ? (
-                              buyPriceArr.map((buyPrice) => {
-                                console.log(buyPrice);
-                                if (nft.token_address == buyPrice[0] && nft.token_id == buyPrice[1]) {
-                                  return <h2 style={{ margin: "1rem" }}>{buyPrice[2]}</h2>;
-                                }
-                              })
-                            ) : (
-                              <h2 style={{ margin: "1rem" }}>Loading...</h2>
-                            )}
+                            <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
+                              {value} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>ETH</b>
+                            </h4>
                           </div>
                         );
                       })}
