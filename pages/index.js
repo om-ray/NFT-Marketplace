@@ -8,7 +8,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
 let currentCollection = false;
-let interval = 2000;
+let interval = 86400000;
 
 export default function Home() {
   let [balance, setBalance] = useState(null);
