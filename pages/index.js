@@ -291,7 +291,7 @@ export default function Home() {
                         margin: "auto",
                         fontFamily: "playfair display",
                       }}>
-                      This address doesn't seem to have any NFT's
+                      This address doesn&#39;t seem to have any NFT&#39;s
                     </h1>
                   )
                 ) : (
