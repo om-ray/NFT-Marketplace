@@ -147,8 +147,8 @@
   background-color: #ffffff;
   border-color: #dedede;
   border-style: solid;
-  height: fit-content !important;
-  width: fit-content !important;
+  height: fit-content;
+  width: fit-content;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 
