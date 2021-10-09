@@ -9,6 +9,8 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
 let buyPrices = [];
+let collectionBuyPriceArr = [];
+let avgCollectionBuyPrice;
 let currentCollection = false;
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
@@ -20,7 +22,7 @@ export default function Home() {
   let [series, setSeries] = useState([{}]);
   let [updates, setUpdates] = useState(null);
   let value;
-  let web3 = new Web3("https://mainnet.infura.io/v3/85053130ed044a1593252260977bbeb5");
+  let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
   let timestampGen = function () {
     let today = new Date();
@@ -29,6 +31,8 @@ export default function Home() {
     let dateTime = date + " " + time;
     return dateTime;
   };
+
+  let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
 
   function groupBy(arr, property) {
     return arr.reduce(function (memo, x) {
@@ -79,17 +83,81 @@ export default function Home() {
     });
   };
 
-  let getFloorPrice = function (collection_addr, collection_name) {
+  let getAvgBuyPrice = function (collection_addr, collection_name) {
     return function () {
       let collectionChanged;
+      console.log(collection_addr);
+      fetch(
+        `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=100&order=block_timestamp.DESC`,
+        {
+          method: "GET",
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "x-api-key": "Q3Zg3JYiD2uaEbeyeVtHVOfdQDN2ERvqqVX7M15HHa2kXq1uBIy1BpM9hk918OLV",
+          },
+        }
+      ).then((tokens) => {
+        if (currentCollection == collection_name) {
+          collectionChanged = false;
+          let dateTime = timestampGen();
+          timeArr.push(dateTime);
+        } else {
+          collectionChanged = true;
+          timeArr = [];
+          seriesArr = [];
+          collectionBuyPriceArr = [];
+          avgCollectionBuyPrice = null;
+          let dateTime = timestampGen();
+          timeArr.push(dateTime);
+          currentCollection = collection_name;
+        }
 
-      fetch(`https://api.opensea.io/api/v1/collections?asset_owner=${address}&offset=0&limit=300`).then(
-        (collections) => {
+        tokens.json().then((tokens) => {
+          tokens.result.map((token) => {
+            collectionBuyPriceArr.push(JSON.parse(token.value));
+            if (collectionBuyPriceArr.length == tokens.result.length) {
+              avgCollectionBuyPrice = average(collectionBuyPriceArr);
+              seriesArr.push(web3.utils.fromWei(avgCollectionBuyPrice.toString(), "ether"));
+              setOptions({
+                xaxis: {
+                  categories: timeArr,
+                },
+                colors: ["#00c234"],
+                fill: {
+                  type: "gradient",
+                  gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.9,
+                    stops: [0, 90, 100],
+                  },
+                },
+              });
+              setSeries([{ name: collection_name, data: seriesArr }]);
+            }
+          });
+        });
+      });
+
+      var autoCall = setInterval(function () {
+        fetch(
+          `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=100&order=block_timestamp.DESC`,
+          {
+            method: "GET",
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "x-api-key": "Q3Zg3JYiD2uaEbeyeVtHVOfdQDN2ERvqqVX7M15HHa2kXq1uBIy1BpM9hk918OLV",
+            },
+          }
+        ).then((tokens) => {
           if (currentCollection == collection_name) {
             collectionChanged = false;
             let dateTime = timestampGen();
             timeArr.push(dateTime);
           } else {
+            if (!collectionChanged) {
+              clearInterval(autoCall);
+            }
             collectionChanged = true;
             timeArr = [];
             seriesArr = [];
@@ -98,10 +166,12 @@ export default function Home() {
             currentCollection = collection_name;
           }
 
-          collections.json().then((collections) => {
-            collections.map((collection) => {
-              if (collection_addr == collection?.primary_asset_contracts[0]?.address) {
-                seriesArr.push(collection.stats.floor_price);
+          tokens.json().then((tokens) => {
+            tokens.result.map((token) => {
+              collectionBuyPriceArr.push(JSON.parse(token.value));
+              if (collectionBuyPriceArr.length == tokens.result.length) {
+                avgCollectionBuyPrice = average(collectionBuyPriceArr);
+                seriesArr.push(web3.utils.fromWei(avgCollectionBuyPrice.toString(), "ether"));
                 setOptions({
                   xaxis: {
                     categories: timeArr,
@@ -121,43 +191,7 @@ export default function Home() {
               }
             });
           });
-        }
-      );
-
-      var autoCall = setInterval(function () {
-        fetch(`https://api.opensea.io/api/v1/collections?asset_owner=${address}&offset=0&limit=300`).then(
-          (collections) => {
-            if (currentCollection == collection_name) {
-              collectionChanged = false;
-              let dateTime = timestampGen();
-              timeArr.push(dateTime);
-            } else {
-              if (!collectionChanged) {
-                clearInterval(autoCall);
-              }
-              collectionChanged = true;
-              timeArr = [];
-              seriesArr = [];
-              let dateTime = timestampGen();
-              timeArr.push(dateTime);
-              currentCollection = collection_name;
-            }
-
-            collections.json().then((collections) => {
-              collections.map((collection) => {
-                if (collection_addr == collection?.primary_asset_contracts[0]?.address) {
-                  seriesArr.push(collection.stats.floor_price);
-                  setOptions({
-                    xaxis: {
-                      categories: timeArr,
-                    },
-                  });
-                  setSeries([{ name: collection_name, data: seriesArr }]);
-                }
-              });
-            });
-          }
-        );
+        });
       }, interval);
     };
   };
@@ -228,7 +262,7 @@ export default function Home() {
                                 {collection[0]}
                                 <button
                                   id={collection[1][0].token_address}
-                                  onClick={getFloorPrice(collection[1][0].token_address, collection[0])}
+                                  onClick={getAvgBuyPrice(collection[1][0].token_address, collection[0])}
                                   style={{ margin: "0 0 0 1rem" }}
                                   className={styles.btnBig}>
                                   View Floor Price Graph
@@ -311,7 +345,7 @@ export default function Home() {
           <div
             className={styles.topRight}
             style={{ position: "absolute", width: "15%", height: "20%", margin: "10rem 1rem" }}>
-            <h1>{currentCollection}</h1>
+            <h1>{currentCollection} Avg. Buy price</h1>
             <Chart
               id="floorPriceChart"
               options={options}
@@ -381,7 +415,6 @@ export default function Home() {
                 }}
                 onClick={() => {
                   if (walletAddrInput.value) {
-                    console.log(walletAddrInput.value);
                     address = walletAddrInput.value;
                     setUpdates(true);
                   } else {
