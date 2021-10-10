@@ -265,7 +265,7 @@ export default function Home() {
                                   onClick={getAvgBuyPrice(collection[1][0].token_address, collection[0])}
                                   style={{ margin: "0 0 0 1rem" }}
                                   className={styles.btnBig}>
-                                  View Floor Price Graph
+                                  View Avg. Buy Price Graph
                                 </button>
                               </h1>
                               <hr></hr>
