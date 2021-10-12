@@ -4,8 +4,8 @@ function ExpandIcon(style) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={style.width}
-      height={style.height}
+      width="14px"
+      height="14px"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

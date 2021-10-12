@@ -10,8 +10,11 @@ let timeArr = [];
 let seriesArr = [];
 let buyPrices = [];
 let collectionBuyPriceArr = [];
+let dayGroupArr = [];
+let groupArr = [];
 let avgCollectionBuyPrice;
 let currentCollection = false;
+
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
 
@@ -24,15 +27,10 @@ export default function Home() {
   let value;
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
-  let timestampGen = function () {
-    let today = new Date();
-    let date = today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
-    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    let dateTime = date + " " + time;
-    return dateTime;
-  };
-
-  let average = (arr) => arr.reduce((a, b) => a + b) / arr.length;
+  let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
+  function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+  }
 
   function groupBy(arr, property) {
     return arr.reduce(function (memo, x) {
@@ -83,12 +81,79 @@ export default function Home() {
     });
   };
 
+  let makeAvgBuyPriceGraph = function (tokens, collection_name) {
+    tokens.json().then((tokens) => {
+      tokens.result.map((token) => {
+        timeArr.push(token.block_timestamp.split("T")[0]);
+        collectionBuyPriceArr.push([token.block_timestamp.split("T")[0], JSON.parse(token.value)]);
+        if (collectionBuyPriceArr.length == tokens.result.length) {
+          timeArr = timeArr.filter(onlyUnique);
+          timeArr.sort(function (x, y) {
+            return x - y;
+          });
+          timeArr.reverse();
+          collectionBuyPriceArr.sort(function (x, y) {
+            return x[0] - y[0];
+          });
+          collectionBuyPriceArr.reverse();
+          for (let i in collectionBuyPriceArr) {
+            let token = collectionBuyPriceArr[i];
+            let lastTimestamp = collectionBuyPriceArr[i - 1] ? collectionBuyPriceArr[i - 1][0] : token[0];
+            if (
+              token[0] == lastTimestamp
+              // ||
+              // token[0] == collectionBuyPriceArr[collectionBuyPriceArr.length - 1][0]
+            ) {
+              dayGroupArr.push(token[1]);
+            } else {
+              groupArr.push(dayGroupArr);
+              dayGroupArr = [];
+              dayGroupArr.push(token[1]);
+              if (token[0] == collectionBuyPriceArr[collectionBuyPriceArr.length - 1][0]) {
+                groupArr.push(dayGroupArr);
+              }
+            }
+          }
+          for (let i in groupArr) {
+            let group = groupArr[i];
+            group = average(group);
+            seriesArr.push(web3.utils.fromWei(group.toString(), "ether"));
+          }
+        }
+      });
+      setOptions({
+        xaxis: {
+          categories: timeArr,
+        },
+        colors: ["#00c234"],
+        fill: {
+          type: "gradient",
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.9,
+            stops: [0, 90, 100],
+          },
+        },
+        noData: {
+          test: "No data to show",
+          align: "center",
+          verticalAlign: "middle",
+        },
+        // stroke: {
+        //   curve: "straight",
+        // },
+      });
+      setSeries([{ name: collection_name, data: seriesArr }]);
+    });
+  };
+
   let getAvgBuyPrice = function (collection_addr, collection_name) {
     return function () {
       let collectionChanged;
       console.log(collection_addr);
       fetch(
-        `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=100&order=block_timestamp.DESC`,
+        `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&order=block_timestamp.DESC`,
         {
           method: "GET",
           headers: {
@@ -99,49 +164,23 @@ export default function Home() {
       ).then((tokens) => {
         if (currentCollection == collection_name) {
           collectionChanged = false;
-          let dateTime = timestampGen();
-          timeArr.push(dateTime);
         } else {
           collectionChanged = true;
           timeArr = [];
           seriesArr = [];
           collectionBuyPriceArr = [];
+          dayGroupArr = [];
+          groupArr = [];
           avgCollectionBuyPrice = null;
-          let dateTime = timestampGen();
-          timeArr.push(dateTime);
           currentCollection = collection_name;
         }
 
-        tokens.json().then((tokens) => {
-          tokens.result.map((token) => {
-            collectionBuyPriceArr.push(JSON.parse(token.value));
-            if (collectionBuyPriceArr.length == tokens.result.length) {
-              avgCollectionBuyPrice = average(collectionBuyPriceArr);
-              seriesArr.push(web3.utils.fromWei(avgCollectionBuyPrice.toString(), "ether"));
-              setOptions({
-                xaxis: {
-                  categories: timeArr,
-                },
-                colors: ["#00c234"],
-                fill: {
-                  type: "gradient",
-                  gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.7,
-                    opacityTo: 0.9,
-                    stops: [0, 90, 100],
-                  },
-                },
-              });
-              setSeries([{ name: collection_name, data: seriesArr }]);
-            }
-          });
-        });
+        makeAvgBuyPriceGraph(tokens, collection_name);
       });
 
       var autoCall = setInterval(function () {
         fetch(
-          `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=100&order=block_timestamp.DESC`,
+          `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&order=block_timestamp.ASC`,
           {
             method: "GET",
             headers: {
@@ -152,8 +191,6 @@ export default function Home() {
         ).then((tokens) => {
           if (currentCollection == collection_name) {
             collectionChanged = false;
-            let dateTime = timestampGen();
-            timeArr.push(dateTime);
           } else {
             if (!collectionChanged) {
               clearInterval(autoCall);
@@ -161,36 +198,10 @@ export default function Home() {
             collectionChanged = true;
             timeArr = [];
             seriesArr = [];
-            let dateTime = timestampGen();
-            timeArr.push(dateTime);
             currentCollection = collection_name;
           }
 
-          tokens.json().then((tokens) => {
-            tokens.result.map((token) => {
-              collectionBuyPriceArr.push(JSON.parse(token.value));
-              if (collectionBuyPriceArr.length == tokens.result.length) {
-                avgCollectionBuyPrice = average(collectionBuyPriceArr);
-                seriesArr.push(web3.utils.fromWei(avgCollectionBuyPrice.toString(), "ether"));
-                setOptions({
-                  xaxis: {
-                    categories: timeArr,
-                  },
-                  colors: ["#00c234"],
-                  fill: {
-                    type: "gradient",
-                    gradient: {
-                      shadeIntensity: 1,
-                      opacityFrom: 0.7,
-                      opacityTo: 0.9,
-                      stops: [0, 90, 100],
-                    },
-                  },
-                });
-                setSeries([{ name: collection_name, data: seriesArr }]);
-              }
-            });
-          });
+          makeAvgBuyPriceGraph(tokens, collection_name);
         });
       }, interval);
     };
