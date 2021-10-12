@@ -95,7 +95,6 @@ export default function Home() {
           collectionBuyPriceArr.sort(function (x, y) {
             return x[0] - y[0];
           });
-          collectionBuyPriceArr.reverse();
           for (let i in collectionBuyPriceArr) {
             let token = collectionBuyPriceArr[i];
             let lastTimestamp = collectionBuyPriceArr[i - 1] ? collectionBuyPriceArr[i - 1][0] : token[0];
