@@ -14,6 +14,9 @@ let dayGroupArr = [];
 let groupArr = [];
 let avgCollectionBuyPrice;
 let currentCollection = false;
+let totalLoopsNeeded;
+let initalQueryOffset = 0;
+let DBUrl = "http://localhost:5000/graphql";
 
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
@@ -24,6 +27,7 @@ export default function Home() {
   let [options, setOptions] = useState({});
   let [series, setSeries] = useState([{}]);
   let [updates, setUpdates] = useState(null);
+  let [expandGraph, setExpandGraph] = useState(false);
   let value;
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
@@ -81,6 +85,90 @@ export default function Home() {
     });
   };
 
+  let populateNFTDataDB = function (collection_addr) {
+    fetch(DBUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `
+      query MyQuery {
+        allNftData(condition: {tokenAddress: "${collection_addr}"}, orderBy: TIMESTAMP_DESC) {
+          nodes {
+            timestamp
+            tokenAddress
+            value
+          }
+        }
+      }
+      `,
+      }),
+    }).then((NFTData) => {
+      NFTData.json().then((NFTData) => {
+        initalQueryOffset = NFTData.data.allNftData.nodes.length;
+      });
+    });
+
+    fetch(
+      `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=1&order=block_timestamp.DESC`,
+      {
+        method: "GET",
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "x-api-key": "Q3Zg3JYiD2uaEbeyeVtHVOfdQDN2ERvqqVX7M15HHa2kXq1uBIy1BpM9hk918OLV",
+        },
+      }
+    ).then((tokens) => {
+      tokens.json().then((tokens) => {
+        totalLoopsNeeded = Math.ceil((tokens.total - initalQueryOffset) / 500);
+        console.log("populating db", totalLoopsNeeded);
+        for (let i = 0; i <= totalLoopsNeeded; i++) {
+          let queryOffset = i * 500 + initalQueryOffset;
+          fetch(
+            `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&offset=${queryOffset}&order=block_timestamp.DESC`,
+            {
+              method: "GET",
+              headers: {
+                "content-type": "application/json; charset=utf-8",
+                "x-api-key": "Q3Zg3JYiD2uaEbeyeVtHVOfdQDN2ERvqqVX7M15HHa2kXq1uBIy1BpM9hk918OLV",
+              },
+            }
+          ).then((tokens) => {
+            console.log(1);
+            tokens.json().then((tokens) => {
+              console.log(2);
+              tokens.result.map((token) => {
+                console.log(3);
+                fetch(DBUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    query: `
+                  mutation MyMutation {
+                    createNftDatum(input: {nftDatum: {value: "${token.value}", timestamp: "${
+                      token.block_timestamp.split("T")[0]
+                    }", tokenAddress: "${token.token_address}"}}) {
+                      nftDatum {
+                        timestamp
+                        tokenAddress
+                        value
+                      }
+                    }
+                  }`,
+                  }),
+                }).then((NFTData) => {
+                  console.log(4);
+                  NFTData.json().then((NFTData) => {
+                    console.log(NFTData);
+                  });
+                });
+              });
+            });
+          });
+        }
+      });
+    });
+  };
+
   let makeAvgBuyPriceGraph = function (tokens, collection_name) {
     tokens.json().then((tokens) => {
       tokens.result.map((token) => {
@@ -131,7 +219,7 @@ export default function Home() {
             shadeIntensity: 1,
             opacityFrom: 0.7,
             opacityTo: 0.9,
-            stops: [0, 90, 100],
+            stops: [0, 100],
           },
         },
         noData: {
@@ -139,9 +227,6 @@ export default function Home() {
           align: "center",
           verticalAlign: "middle",
         },
-        // stroke: {
-        //   curve: "straight",
-        // },
       });
       setSeries([{ name: collection_name, data: seriesArr }]);
     });
@@ -150,6 +235,7 @@ export default function Home() {
   let getAvgBuyPrice = function (collection_addr, collection_name) {
     return function () {
       let collectionChanged;
+      populateNFTDataDB(collection_addr);
       console.log(collection_addr);
       fetch(
         `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&order=block_timestamp.DESC`,
@@ -352,24 +438,63 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div
-            className={styles.topRight}
-            style={{ position: "absolute", width: "15%", height: "20%", margin: "10rem 1rem" }}>
-            <h1>{currentCollection} Avg. Buy price</h1>
-            <Chart
-              id="floorPriceChart"
-              options={options}
-              series={series}
-              type="area"
-              width="100%"
-              height="100%"></Chart>
-            <button
-              style={{ margin: "0 0 0 1rem", float: "right", fontSize: "10px", padding: "0.5rem 2rem" }}
-              className={styles.btnBig}>
-              <ExpandIcon style={{ width: "14px", height: "14px" }}></ExpandIcon>
-              Expand
-            </button>
-          </div>
+          {expandGraph ? (
+            <div
+              className={styles.container}
+              style={{
+                width: "100vw",
+                height: "100vh",
+                padding: "1rem",
+                position: "absolute",
+                top: "0",
+                left: "0",
+                backgroundColor: "rgba(0, 0, 0, 0.2)",
+              }}>
+              <div
+                className={styles.container}
+                style={{
+                  width: "90%",
+                  height: "90%",
+                  padding: "0rem 0rem 10rem 0rem",
+                  backgroundColor: "white",
+                  border: "1px solid #dedede",
+                  borderRadius: "20px",
+                }}>
+                <div style={{ width: "90%", height: "60%" }}>
+                  <h1>{currentCollection} Avg. Buy price</h1>
+                  <Chart
+                    id="floorPriceChart"
+                    options={options}
+                    series={series}
+                    type="area"
+                    width="100%"
+                    height="100%"></Chart>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className={styles.topRight}
+              style={{ position: "absolute", width: "15%", height: "20%", margin: "10rem 1rem" }}>
+              <h1>{currentCollection} Avg. Buy price</h1>
+              <Chart
+                id="floorPriceChart"
+                options={options}
+                series={series}
+                type="area"
+                width="100%"
+                height="100%"></Chart>
+              <button
+                onClick={() => {
+                  setExpandGraph(true);
+                }}
+                style={{ margin: "0 0 0 1rem", float: "right", fontSize: "10px", padding: "0.5rem 2rem" }}
+                className={styles.btnBig}>
+                <ExpandIcon style={{ width: "14px", height: "14px" }}></ExpandIcon>
+                Expand
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <div className={styles.container}>
