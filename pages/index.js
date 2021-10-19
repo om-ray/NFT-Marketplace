@@ -133,11 +133,8 @@ export default function Home() {
               },
             }
           ).then((tokens) => {
-            console.log(1);
             tokens.json().then((tokens) => {
-              console.log(2);
               tokens.result.map((token) => {
-                console.log(3);
                 fetch(DBUrl, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -156,10 +153,7 @@ export default function Home() {
                   }`,
                   }),
                 }).then((NFTData) => {
-                  console.log(4);
-                  NFTData.json().then((NFTData) => {
-                    console.log(NFTData);
-                  });
+                  NFTData.json().then((NFTData) => {});
                 });
               });
             });
