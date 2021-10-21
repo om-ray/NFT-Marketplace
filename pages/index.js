@@ -5,6 +5,7 @@ import Web3 from "web3";
 import styles from "../styles/Home.module.css";
 import ExpandIcon from "./components/ExpandIcon";
 import dynamic from "next/dynamic";
+import MinimizeIcon from "./components/MinimizeIcon";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
@@ -12,13 +13,11 @@ let buyPrices = [];
 let collectionBuyPriceArr = [];
 let dayGroupArr = [];
 let groupArr = [];
-let avgCollectionBuyPrice;
 let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
 let initalQueryOffset = 0;
 let DBUrl = "http://localhost:5000/graphql";
-let test = 0;
 
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
@@ -40,6 +39,7 @@ export default function Home() {
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
+
   function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
   }
@@ -198,22 +198,20 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         query: `query MyQuery {
-          allNftData(
-            condition: {tokenAddress: "${collection_addr}"}
-            orderBy: TIMESTAMP_DESC
-          ) {
-            nodes {
-              timestamp
-              tokenAddress
-              value
-            }
-          }
-        }`,
+            allNftData(
+              condition: {tokenAddress: "${collection_addr}"}
+              orderBy: TIMESTAMP_DESC
+              ) {
+                nodes {
+                  timestamp
+                  tokenAddress
+                  value
+                }
+              }
+            }`,
       }),
     })
       .then((tokens) => {
-        timeArr = [];
-        collectionBuyPriceArr = [];
         tokens
           .json()
           .then((tokens) => {
@@ -254,7 +252,6 @@ export default function Home() {
                   let group = groupArr[i];
                   group = average(group);
                   seriesArr.push(web3.utils.fromWei(group.toString(), "ether"));
-                  console.log(timeArr, seriesArr);
                 }
               }
             });
@@ -308,11 +305,7 @@ export default function Home() {
           for (let i in collectionBuyPriceArr) {
             let token = collectionBuyPriceArr[i];
             let lastTimestamp = collectionBuyPriceArr[i - 1] ? collectionBuyPriceArr[i - 1][0] : token[0];
-            if (
-              token[0] == lastTimestamp
-              // ||
-              // token[0] == collectionBuyPriceArr[collectionBuyPriceArr.length - 1][0]
-            ) {
+            if (token[0] == lastTimestamp) {
               dayGroupArr.push(token[1]);
             } else {
               groupArr.push(dayGroupArr);
@@ -327,7 +320,6 @@ export default function Home() {
             let group = groupArr[i];
             group = average(group);
             seriesArr.push(web3.utils.fromWei(group.toString(), "ether"));
-            console.log(seriesArr);
           }
         }
       });
@@ -380,7 +372,6 @@ export default function Home() {
           collectionBuyPriceArr = [];
           dayGroupArr = [];
           groupArr = [];
-          avgCollectionBuyPrice = null;
           currentCollection = collection_name;
         }
 
@@ -455,21 +446,6 @@ export default function Home() {
                 position: "relative",
                 overflowY: "scroll",
               }}>
-              {/* <button
-            className={styles.btnBig}
-            style={{
-              position: "absolute",
-              top: "0.5rem",
-              right: "0.5rem",
-              zIndex: "999999",
-              fontFamily: "roboto slab",
-            }}
-            onClick={() => {
-              getNFTS();
-              getBuyPrices();
-            }}>
-            Refresh
-          </button> */}
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {NFTS ? (
                   NFTS.length > 0 ? (
@@ -586,6 +562,24 @@ export default function Home() {
                 }}>
                 <div style={{ width: "90%", height: "60%" }}>
                   <h1>{currentCollection} Avg. Buy price</h1>
+                  <button
+                    onClick={() => {
+                      setExpandGraph(false);
+                      // getAvgBuyPrice(currentCollectionAddress, currentCollection);
+                    }}
+                    style={{
+                      margin: "0 0 0 1rem",
+                      float: "right",
+                      fontSize: "10px",
+                      padding: "0.5rem 2rem",
+                      position: "absolute",
+                      right: "0",
+                      top: "30px",
+                    }}
+                    className={styles.btnBig}>
+                    <MinimizeIcon style={{ width: "14px", height: "14px" }}></MinimizeIcon>
+                    Minimize
+                  </button>
                   <Chart
                     id="floorPriceChart"
                     options={bigoptions}
