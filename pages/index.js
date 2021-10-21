@@ -584,7 +584,7 @@ export default function Home() {
                   border: "1px solid #dedede",
                   borderRadius: "20px",
                 }}>
-                <div onload={() => {}} style={{ width: "90%", height: "60%" }}>
+                <div style={{ width: "90%", height: "60%" }}>
                   <h1>{currentCollection} Avg. Buy price</h1>
                   <Chart
                     id="floorPriceChart"
