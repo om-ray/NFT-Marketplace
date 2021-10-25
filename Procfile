@@ -1,1 +1,1 @@
-web: postgraphile -c $RDS_URL --host 0.0.0.0 --port 5432
+web: postgraphile -c $RDS_URL --host 0.0.0.0 --port $PORT
