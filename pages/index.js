@@ -17,7 +17,7 @@ let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
 let initalQueryOffset = 0;
-let DBUrl = "http://localhost:$PORT/graphql";
+let DBUrl = `http://localhost:${process.env.PORT}/graphql`;
 
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
