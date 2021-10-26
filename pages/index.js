@@ -36,8 +36,9 @@ export default function Home() {
   let [bigseries, setBigSeries] = useState(() => [{}]);
   let [expandGraph, setExpandGraph] = useState(() => false);
   let value;
+  console.log(process.env);
   if (typeof process !== "undefined") {
-    DBUrl = `http://localhost:${process.env.PORT}/graphql`;
+    DBUrl = `http://localhost:${process.env.NEXT_PUBLIC_PORT}/graphql`;
   }
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
