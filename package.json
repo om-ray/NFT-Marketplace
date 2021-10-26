@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "serve -s build",
-    "lint": "next lint",
-    "heroku-postbuild": "npm run build"
+    "start": "next start -p $PORT; postgraphile -c $RDS_URL --host 0.0.0.0 --port $PORT --watch --enhance-graphiql --dynamic-json -o",
+    "lint": "next lint"
   },
   "dependencies": {
     "apexcharts": "^3.28.3",
