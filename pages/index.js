@@ -16,8 +16,8 @@ let groupArr = [];
 let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
+let DBUrl;
 let initalQueryOffset = 0;
-let DBUrl = `http://localhost:${process.env.PORT}/graphql`;
 
 let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
@@ -36,6 +36,9 @@ export default function Home() {
   let [bigseries, setBigSeries] = useState(() => [{}]);
   let [expandGraph, setExpandGraph] = useState(() => false);
   let value;
+  if (typeof process !== "undefined") {
+    DBUrl = `http://localhost:${process.env.PORT}/graphql`;
+  }
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
