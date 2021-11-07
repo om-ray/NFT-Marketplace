@@ -16,7 +16,7 @@ let groupArr = [];
 let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
-let DBUrl;
+let DBUrl = `http://localhost:5000/graphql`;
 let initalQueryOffset = 0;
 
 let interval = 86400000;
@@ -37,9 +37,6 @@ export default function Home() {
   let [expandGraph, setExpandGraph] = useState(() => false);
   let value;
   console.log(process.env);
-  if (typeof process !== "undefined") {
-    DBUrl = `http://localhost:${process.env.NEXT_PUBLIC_PORT}/graphql`;
-  }
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
@@ -505,6 +502,9 @@ export default function Home() {
                                       borderRadius: "10px",
                                     }}
                                   />
+                                  <h4 style={{ fontFamily: "roboto slab", fontWeight: 200, margin: "0px" }}>
+                                    Buy Price:
+                                  </h4>
                                   <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
                                     {value}{" "}
                                     <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>ETH</b>
