@@ -16,10 +16,8 @@ let groupArr = [];
 let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
-let DBUrl = `http://localhost:5000/graphql`;
+let DBUrl = `http://0.0.0.0:5000/graphql`;
 let initalQueryOffset = 0;
-
-let interval = 86400000;
 let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
 
 export default function Home() {
@@ -31,9 +29,25 @@ export default function Home() {
   });
   let [series, setSeries] = useState(() => [{}]);
   let [bigoptions, setBigOptions] = useState(() => {
-    return {};
+    return {
+      colors: ["#00c234"],
+      fill: {
+        type: "gradient",
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.7,
+          opacityTo: 0.9,
+          stops: [0, 100],
+        },
+      },
+      noData: {
+        text: "Loading",
+        align: "center",
+        verticalAlign: "middle",
+      },
+    };
   });
-  let [bigseries, setBigSeries] = useState(() => [{}]);
+  let [bigseries, setBigSeries] = useState(() => []);
   let [expandGraph, setExpandGraph] = useState(() => false);
   let value;
   console.log(process.env);
@@ -42,7 +56,7 @@ export default function Home() {
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
 
   function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;d
+    return self.indexOf(value) === index;
   }
 
   function groupBy(arr, property) {
@@ -87,15 +101,15 @@ export default function Home() {
       }
     ).then((res) => {
       res.json().then((nfts) => {
-        nfts.result.map((nft) => {
+        nfts?.result?.map((nft) => {
           buyPrices.push([nft.token_address, nft.token_id, web3.utils.fromWei(nft.value, "ether")]);
         });
       });
     });
   };
 
-  let populateNFTDataDB = function (collection_addr) {
-    fetch(DBUrl, {
+  let populateNFTDataDB = async function (collection_addr) {
+    await fetch(DBUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -113,6 +127,7 @@ export default function Home() {
       }),
     }).then((NFTData) => {
       NFTData.json().then((NFTData) => {
+        console.log(NFTData.data.allNftData);
         initalQueryOffset = NFTData.data.allNftData.nodes.length;
       });
     });
@@ -128,6 +143,7 @@ export default function Home() {
       }
     ).then((tokens) => {
       tokens.json().then((tokens) => {
+        console.log(tokens.total);
         totalLoopsNeeded = Math.ceil((tokens.total - initalQueryOffset) / 500);
         console.log("populating db", totalLoopsNeeded);
         let i = 0;
@@ -166,9 +182,7 @@ export default function Home() {
                     })
                       .then((NFTData) => {
                         NFTData.json()
-                          .then((NFTData) => {
-                            console.log(NFTData);
-                          })
+                          .then((NFTData) => {})
                           .catch((err) => {
                             console.error(err);
                           });
@@ -186,7 +200,7 @@ export default function Home() {
           } else {
             clearInterval(runMutation);
           }
-        }, 1000);
+        }, 10000);
       });
     });
   };
@@ -271,7 +285,7 @@ export default function Home() {
                 },
               },
               noData: {
-                text: "No data to show",
+                text: "Loading",
                 align: "center",
                 verticalAlign: "middle",
               },
@@ -290,7 +304,7 @@ export default function Home() {
   let makeSmallAvgBuyPriceGraph = function (tokens, collection_name) {
     currentCollection = collection_name;
     tokens.json().then((tokens) => {
-      tokens.result.map((token) => {
+      tokens?.result?.map((token) => {
         timeArr.push(token.block_timestamp.split("T")[0]);
         collectionBuyPriceArr.push([token.block_timestamp.split("T")[0], JSON.parse(token.value)]);
         if (collectionBuyPriceArr.length == tokens.result.length) {
@@ -404,7 +418,7 @@ export default function Home() {
 
           makeSmallAvgBuyPriceGraph(tokens, collection_name);
         });
-      }, interval);
+      }, 10000);
     };
   };
 
@@ -495,6 +509,13 @@ export default function Home() {
                                   </h2>
                                   <img
                                     src={`${nft_metadata ? nft_metadata.image : nft.image}`}
+                                    alt={
+                                      nft_metadata
+                                        ? nft_metadata.name
+                                          ? nft_metadata.name
+                                          : `${nft.name} ${nft.token_id}`
+                                        : `${nft.name} ${nft.token_id}`
+                                    }
                                     style={{
                                       width: "150px",
                                       margin: "9% auto",
