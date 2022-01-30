@@ -16,7 +16,7 @@ let groupArr = [];
 let currentCollection = false;
 let currentCollectionAddress = false;
 let totalLoopsNeeded;
-let DBUrl = `http://localhost:8080/graphql`;
+let DBUrl = `http://localhost:5000/graphql`;
 let initalQueryOffset = 0;
 
 let interval = 86400000;
@@ -42,8 +42,7 @@ export default function Home() {
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
 
   function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;
-    console.o;
+    return self.indexOf(value) === index;d
   }
 
   function groupBy(arr, property) {
