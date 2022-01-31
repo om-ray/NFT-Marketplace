@@ -38,7 +38,7 @@ class DetectAdBlock extends Component {
     const script = document.createElement("script");
     script.id = "adblock-detection";
     script.type = "text/javascript";
-    script.src = "/adframe.js";
+    script.src = "../adframe.js";
     script.onload = noAdBlockDetected;
     script.onerror = adBlockDetected;
     head.appendChild(script);
