@@ -46,7 +46,7 @@ class DetectAdBlock extends Component {
   noticeContentJSX() {
     return (
       <div id="adblock-notice">
-        <div className="message">
+        <div style={{ position: "absolute", top: "50%" }}>
           <h3>Hey, you!</h3>
           <p>Your adblocker is on again.</p>
           <button onClick={this.detectAdBlocker}>Check for Adblocker again</button>

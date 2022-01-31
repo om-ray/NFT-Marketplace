@@ -5,7 +5,7 @@ import styles from "../styles/Home.module.css";
 import ExpandIcon from "./components/ExpandIcon";
 import dynamic from "next/dynamic";
 import MinimizeIcon from "./components/MinimizeIcon";
-import DetectAdBlock from "./DetectAdBlock";
+import DetectAdBlock from "../DetectAdBlock";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
