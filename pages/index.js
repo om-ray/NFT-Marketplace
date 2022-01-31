@@ -17,7 +17,7 @@ let currentCollectionAddress = false;
 let totalLoopsNeeded;
 let DBUrl = `http://0.0.0.0:5000/graphql`;
 let initalQueryOffset = 0;
-let address; /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed"; */
+let address /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed" */;
 
 export default function Home() {
   let [updates, setUpdates] = useState(() => null);
@@ -49,7 +49,6 @@ export default function Home() {
   let [bigseries, setBigSeries] = useState(() => []);
   let [expandGraph, setExpandGraph] = useState(() => false);
   let value;
-  console.log(process.env);
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
 
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
@@ -288,6 +287,15 @@ export default function Home() {
                   stops: [0, 100],
                 },
               },
+              tools: {
+                download: true,
+                selection: true,
+                zoom: true,
+                zoomin: true,
+                zoomout: true,
+                pan: true,
+                reset: true,
+              },
               noData: {
                 text: "Loading",
                 align: "center",
@@ -368,6 +376,11 @@ export default function Home() {
 
   let getAvgBuyPrice = function (collection_addr, collection_name) {
     return function () {
+      if (getComputedStyle(document.getElementsByClassName(styles.smallGraphWrapper)[0]).display == "none") {
+        makeBigAvgBuyPriceGraph(collection_addr);
+        setExpandGraph(true);
+        window.alert("Please use landscape mode on the graph for the best experience");
+      }
       let collectionChanged;
       populateNFTDataDB(collection_addr);
       currentCollectionAddress = collection_addr;
@@ -445,26 +458,18 @@ export default function Home() {
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       {address ? (
         <>
           <div className={styles.container}>
-            <div className={`${styles.topLeft} ${styles.card}`}>
+            <div className={`${styles.topLeft} ${styles.card} ${styles.balanceCard}`}>
               <h1 style={{ fontFamily: "playfair display", fontWeight: 900 }}>User Balance:</h1>
               <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
                 {balance} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>ETH</b>
               </h4>
             </div>
-            <div
-              style={{
-                width: "66%",
-                height: "82%",
-                border: "1px solid #dedede",
-                borderRadius: "20px",
-                padding: "1rem",
-                position: "relative",
-                overflowY: "scroll",
-              }}>
+            <div className={styles.nftWrapper}>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {NFTS ? (
                   NFTS.length > 0 ? (
@@ -473,7 +478,7 @@ export default function Home() {
                         <>
                           <div style={{ float: "none", width: "100%" }}>
                             <div>
-                              <h1>
+                              <h1 className={styles.collectionName}>
                                 {collection[0]}
                                 <button
                                   id={collection[1][0].token_address}
@@ -494,17 +499,9 @@ export default function Home() {
                               let nft_metadata = JSON.parse(nft.metadata);
                               return (
                                 <div
-                                  key={Math.random() * 10000000000000}
-                                  className={styles.card}
-                                  style={{
-                                    float: "left",
-                                    width: "30%",
-                                    height: "25rem",
-                                    margin: "1rem",
-                                    position: "relative",
-                                    textAlign: "center",
-                                  }}>
-                                  <h2 style={{ margin: "1rem" }}>
+                                  key={Math.random() * 1000000000000000}
+                                  className={`${styles.card} ${styles.nftCard}`}>
+                                  <h2>
                                     {nft_metadata
                                       ? nft_metadata.name
                                         ? nft_metadata.name
@@ -520,17 +517,9 @@ export default function Home() {
                                           : `${nft.name} ${nft.token_id}`
                                         : `${nft.name} ${nft.token_id}`
                                     }
-                                    style={{
-                                      width: "150px",
-                                      margin: "9% auto",
-                                      border: "1px solid #dedede",
-                                      borderRadius: "10px",
-                                    }}
                                   />
-                                  <h4 style={{ fontFamily: "roboto slab", fontWeight: 200, margin: "0px" }}>
-                                    Buy Price:
-                                  </h4>
-                                  <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
+                                  <h4 className={styles.nftBuyPriceTitle}>Buy Price:</h4>
+                                  <h4 className={styles.nftBuyPriceValue}>
                                     {value}{" "}
                                     <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>ETH</b>
                                   </h4>
@@ -582,34 +571,26 @@ export default function Home() {
               <div
                 className={styles.container}
                 style={{
-                  width: "90%",
-                  height: "90%",
-                  padding: "0rem 0rem 10rem 0rem",
+                  width: "95%",
+                  height: "95%",
+                  padding: "0rem 0rem 2rem 0rem",
                   backgroundColor: "white",
                   border: "1px solid #dedede",
                   borderRadius: "20px",
                 }}>
                 <div style={{ width: "90%", height: "60%" }}>
-                  <h1>{currentCollection} Avg. Buy price</h1>
+                  <h1 className={styles.bigGraphCollectionName}>{currentCollection} Avg. Buy price</h1>
                   <button
                     onClick={() => {
                       setExpandGraph(false);
                       // getAvgBuyPrice(currentCollectionAddress, currentCollection);
                     }}
-                    style={{
-                      margin: "0 0 0 1rem",
-                      float: "right",
-                      fontSize: "10px",
-                      padding: "0.5rem 2rem",
-                      position: "absolute",
-                      right: "0",
-                      top: "30px",
-                    }}
-                    className={styles.btnBig}>
+                    className={`${styles.minimizeBtn} ${styles.btnBig}`}>
                     <MinimizeIcon style={{ width: "14px", height: "14px" }}></MinimizeIcon>
                     Minimize
                   </button>
                   <Chart
+                    className={styles.bigGraph}
                     id="floorPriceChart"
                     options={bigoptions}
                     series={bigseries}
@@ -620,9 +601,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div
-              className={styles.topRight}
-              style={{ position: "absolute", width: "15%", height: "20%", margin: "10rem 1rem" }}>
+            <div className={styles.smallGraphWrapper}>
               <h1>{currentCollection} Avg. Buy price</h1>
               <Chart
                 id="floorPriceChart"
@@ -646,56 +625,16 @@ export default function Home() {
         </>
       ) : (
         <div className={styles.container}>
-          <div
-            style={{
-              width: "40%",
-              height: "80%",
-              border: "1px solid #dedede",
-              borderRadius: "20px",
-              padding: "1rem",
-              position: "relative",
-              overflowY: "scroll",
-              margin: "auto",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}>
-            <h1
-              style={{
-                fontFamily: "playfair display",
-                fontWeight: 900,
-                margin: "-20rem 0px 15rem 0px",
-                fontSize: "64px",
-              }}>
-              NFT Tracker
-            </h1>
-            <div style={{ display: "flex", justifyContent: "space-around" }}>
+          <div className={styles.addrWrapper}>
+            <h1 className={styles.nft_tracker_title}>NFT Tracker</h1>
+            <div className={styles.walletAddrInfoWrapper}>
               <input
                 id="walletAddrInput"
-                style={{
-                  width: "20vw",
-                  height: "5vh",
-                  border: "1px solid #d1d1d1",
-                  borderRadius: "20px 0 0 20px",
-                  fontFamily: "roboto slab",
-                  padding: "1rem",
-                  textAlign: "center",
-                  fontSize: "20px",
-                  borderRight: "none",
-                }}
+                className={styles.walletAddrInput}
                 type="text"
                 placeholder="Enter Your Wallet Address"
               />
               <button
-                style={{
-                  borderRadius: "0px 20px 20px 0px",
-                  margin: "0",
-                  height: "5vh",
-                  border: "1px solid #d1d1d1",
-                  backgroundColor: "#00c234",
-                  color: "white",
-                }}
                 onClick={() => {
                   if (walletAddrInput.value) {
                     address = walletAddrInput.value;
@@ -704,7 +643,7 @@ export default function Home() {
                     window.alert("Please fill out the wallet address");
                   }
                 }}
-                className={styles.btnBig}>
+                className={`${styles.submitBtn} ${styles.btnBig}`}>
                 SUBMIT
               </button>
             </div>
