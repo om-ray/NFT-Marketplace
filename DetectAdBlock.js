@@ -38,15 +38,15 @@ class DetectAdBlock extends Component {
     const script = document.createElement("script");
     script.id = "adblock-detection";
     script.type = "text/javascript";
-    script.src = "./adframe.js";
+    script.src = "/adframe.js";
     script.onload = noAdBlockDetected;
     script.onerror = adBlockDetected;
     head.appendChild(script);
   }
   noticeContentJSX() {
     return (
-      <div id="adblock-notice">
-        <div style={{ position: "absolute", top: "50%" }}>
+      <div style={{ position: "absolute", top: "50%" }} id="adblock-notice">
+        <div>
           <h3>Hey, you!</h3>
           <p>Your adblocker is on again.</p>
           <button onClick={this.detectAdBlocker}>Check for Adblocker again</button>
