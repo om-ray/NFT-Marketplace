@@ -44,18 +44,10 @@ class DetectAdBlock extends Component {
     head.appendChild(script);
   }
   noticeContentJSX() {
-    return (
-      <div id="adblock-notice">
-        <div>
-          <h3>Hey, you!</h3>
-          <p>Your adblocker is on again.</p>
-          <button onClick={this.detectAdBlocker}>Check for Adblocker again</button>
-        </div>
-      </div>
-    );
+    window.alert("Please turn all adblockers off");
   }
   render() {
-    return <div id="adblock-wrapper">{this.state.adBlockDetected ? this.noticeContentJSX() : null}</div>;
+    return <>{this.state.adBlockDetected ? this.noticeContentJSX() : null}</>;
   }
 }
 export default DetectAdBlock;
