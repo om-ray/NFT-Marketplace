@@ -11,7 +11,7 @@ class DetectAdBlock extends Component {
   componentDidMount() {
     this.detectAdBlocker();
   }
-  componentWillUpdate(nextProps, nextState) {
+  UNSAFE_componentWillUpdate(nextProps, nextState) {
     if (this.props.pathname !== nextProps.pathname) {
       this.detectAdBlocker();
     }
