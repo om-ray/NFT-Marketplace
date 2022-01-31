@@ -1,11 +1,12 @@
 import Head from "next/head";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import Web3 from "web3";
 import styles from "../styles/Home.module.css";
 import ExpandIcon from "./components/ExpandIcon";
 import dynamic from "next/dynamic";
 import MinimizeIcon from "./components/MinimizeIcon";
+import DetectAdBlock from "./DetectAdBlock";
+
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
@@ -442,6 +443,7 @@ export default function Home() {
           rel="stylesheet"
         />
       </Head>
+      <DetectAdBlock pathname={window.location.pathname} />
       {address ? (
         <>
           <div className={styles.container}>
