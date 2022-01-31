@@ -1,12 +1,13 @@
 import "../styles/globals.css";
+import Script from "next/script";
 
 function MyApp({ Component, pageProps }) {
   return (
     <>
       <head>
-        <script src="./ads-prebid.js"></script>
-        <script src="./ads.js"></script>
-        <script src="./prebid-ads.js"></script>
+        <Script src="./ads-prebid.js"></Script>
+        <Script src="./ads.js"></Script>
+        <Script src="./prebid-ads.js"></Script>
       </head>
       {(function () {
         if (
