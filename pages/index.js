@@ -5,8 +5,6 @@ import styles from "../styles/Home.module.css";
 import ExpandIcon from "./components/ExpandIcon";
 import dynamic from "next/dynamic";
 import MinimizeIcon from "./components/MinimizeIcon";
-import DetectAdBlock from "../DetectAdBlock";
-
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
@@ -126,12 +124,17 @@ export default function Home() {
       }
       `,
       }),
-    }).then((NFTData) => {
-      NFTData.json().then((NFTData) => {
-        console.log(NFTData.data.allNftData);
-        initalQueryOffset = NFTData.data.allNftData.nodes.length;
+    })
+      .then((NFTData) => {
+        NFTData.json().then((NFTData) => {
+          console.log(NFTData.data.allNftData);
+          initalQueryOffset = NFTData.data.allNftData.nodes.length;
+        });
+      })
+      .catch((err) => {
+        window.alert(`Please diable any adblockers you have enabled`);
+        location.reload();
       });
-    });
 
     fetch(
       `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=1&order=block_timestamp.DESC`,
@@ -201,7 +204,7 @@ export default function Home() {
           } else {
             clearInterval(runMutation);
           }
-        }, 10000);
+        }, 15000);
       });
     });
   };
@@ -445,7 +448,6 @@ export default function Home() {
       </Head>
       {address ? (
         <>
-          {typeof window !== "undefined" ? <DetectAdBlock pathname={window.location.pathname} /> : null}
           <div className={styles.container}>
             <div className={`${styles.topLeft} ${styles.card}`}>
               <h1 style={{ fontFamily: "playfair display", fontWeight: 900 }}>User Balance:</h1>
@@ -644,7 +646,6 @@ export default function Home() {
         </>
       ) : (
         <div className={styles.container}>
-          {typeof window !== "undefined" ? <DetectAdBlock pathname={window.location.pathname} /> : null}
           <div
             style={{
               width: "40%",
