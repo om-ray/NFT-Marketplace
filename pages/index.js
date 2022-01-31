@@ -445,7 +445,7 @@ export default function Home() {
       </Head>
       {address ? (
         <>
-          {typeof window !== "undefined" ? <DetectAdBlock pathname={window.location.pathname} /> : null}
+          {/* {typeof window !== "undefined" ? <DetectAdBlock pathname={window.location.pathname} /> : null} */}
           <div className={styles.container}>
             <div className={`${styles.topLeft} ${styles.card}`}>
               <h1 style={{ fontFamily: "playfair display", fontWeight: 900 }}>User Balance:</h1>
@@ -644,7 +644,7 @@ export default function Home() {
         </>
       ) : (
         <div className={styles.container}>
-          <DetectAdBlock pathname={window.location.pathname} />
+          {/* <DetectAdBlock pathname={window.location.pathname} /> */}
           <div
             style={{
               width: "40%",
