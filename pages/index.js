@@ -131,7 +131,7 @@ export default function Home() {
         });
       })
       .catch((err) => {
-        window.alert(`${err} Please disable any adblockers you have enabled`);
+        window.alert(`Please disable any adblockers you have enabled`);
       });
 
     fetch(
