@@ -107,32 +107,15 @@ export default function Home() {
   };
 
   let populateNFTDataDB = async function (collection_addr) {
-    await fetch(DBUrl, {
+    await fetch("/api/populate_db", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: `
-      query MyQuery {
-        allNftData(condition: {tokenAddress: "${collection_addr}"}, orderBy: TIMESTAMP_DESC) {
-          nodes {
-            timestamp
-            tokenAddress
-            value
-          }
-        }
-      }
-      `,
-      }),
-    })
-      .then((NFTData) => {
-        NFTData.json().then((NFTData) => {
-          console.log(NFTData.data.allNftData);
-          initalQueryOffset = NFTData.data.allNftData.nodes.length;
-        });
-      })
-      .catch((err) => {
-        window.alert(`Please disable any adblockers you have enabled`);
+      body: JSON.stringify({ DBUrl: DBUrl, collection_addr: collection_addr }),
+    }).then((res) => {
+      res.json().then((res) => {
+        initalQueryOffset = res;
+        console.log(res);
       });
+    });
 
     fetch(
       `https://deep-index.moralis.io/api/v2/nft/${collection_addr}/transfers?chain=eth&format=decimal&limit=1&order=block_timestamp.DESC`,
@@ -166,20 +149,15 @@ export default function Home() {
                 .json()
                 .then((tokens) => {
                   tokens.result.map(async (token) => {
-                    await fetch(DBUrl, {
+                    await fetch("/api/create_nft_data", {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        query: `
-                          mutation MyMutation {
-                            createNftDatum(input: {nftDatum: {value: "${token.value}", timestamp: "${token.block_timestamp}", tokenAddress: "${token.token_address}"}}) {
-                              nftDatum {
-                                timestamp
-                                tokenAddress
-                                value
-                              }
-                            }
-                          }`,
+                        DBUrl: DBUrl,
+                        token: {
+                          value: token.value,
+                          block_timestamp: token.block_timestamp,
+                          token_address: token.token_address,
+                        },
                       }),
                     })
                       .then((NFTData) => {
@@ -210,23 +188,9 @@ export default function Home() {
   let makeBigAvgBuyPriceGraph = function (collection_addr) {
     seriesArr = [];
     groupArr = [];
-    fetch(DBUrl, {
+    fetch("/api/get_big_graph_data", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: `query MyQuery {
-            allNftData(
-              condition: {tokenAddress: "${collection_addr}"}
-              orderBy: TIMESTAMP_DESC
-              ) {
-                nodes {
-                  timestamp
-                  tokenAddress
-                  value
-                }
-              }
-            }`,
-      }),
+      body: JSON.stringify({ DBUrl: DBUrl, collection_addr: collection_addr }),
     })
       .then((tokens) => {
         tokens
