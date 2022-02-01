@@ -131,8 +131,7 @@ export default function Home() {
         });
       })
       .catch((err) => {
-        window.alert(`Please diable any adblockers you have enabled`);
-        location.reload();
+        window.alert(`${err} Please disable any adblockers you have enabled`);
       });
 
     fetch(
@@ -578,7 +577,7 @@ export default function Home() {
                   border: "1px solid #dedede",
                   borderRadius: "20px",
                 }}>
-                <div style={{ width: "90%", height: "60%" }}>
+                <div style={{ width: "90%", height: "85%" }}>
                   <h1 className={styles.bigGraphCollectionName}>{currentCollection} Avg. Buy price</h1>
                   <button
                     onClick={() => {
