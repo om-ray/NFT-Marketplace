@@ -264,6 +264,18 @@ export default function Home() {
                 align: "center",
                 verticalAlign: "middle",
               },
+              yaxis: {
+                labels: {
+                  formatter: function (val) {
+                    return val.toFixed(5);
+                  },
+                },
+              },
+              dataLabels: {
+                formatter: function (val) {
+                  return val.toFixed(2);
+                },
+              },
             });
             setBigSeries([{ name: currentCollection, data: seriesArr }]);
           })
@@ -327,10 +339,22 @@ export default function Home() {
             stops: [0, 100],
           },
         },
+        yaxis: {
+          labels: {
+            formatter: function (val) {
+              return val.toFixed(5);
+            },
+          },
+        },
         noData: {
           text: "No data to show",
           align: "center",
           verticalAlign: "middle",
+        },
+        dataLabels: {
+          formatter: function (val) {
+            return val.toFixed(2);
+          },
         },
       });
       setSeries([{ name: collection_name, data: seriesArr }]);
@@ -400,6 +424,22 @@ export default function Home() {
         });
       }, 10000);
     };
+  };
+
+  let test = function () {
+    fetch("/api/create_account", {
+      method: "POST",
+      body: JSON.stringify({
+        DBUrl: DBUrl,
+        email: "omihridesh2asd@gmail.com",
+        password: "123",
+        addresses: "asdf, asdf, asdsdfg, sderarfg",
+      }),
+    }).then((response) => {
+      response.json().then((result) => {
+        console.log(result);
+      });
+    });
   };
 
   useEffect(() => {
@@ -608,6 +648,12 @@ export default function Home() {
                 }}
                 className={`${styles.submitBtn} ${styles.btnBig}`}>
                 SUBMIT
+              </button>
+              <button
+                onClick={() => {
+                  test();
+                }}>
+                test
               </button>
             </div>
           </div>
