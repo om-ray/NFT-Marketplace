@@ -5,6 +5,10 @@ import styles from "../styles/Home.module.css";
 import ExpandIcon from "./components/ExpandIcon";
 import dynamic from "next/dynamic";
 import MinimizeIcon from "./components/MinimizeIcon";
+import CollapseSidebarArrowIcon from "./components/CollapseSidebarArrowIcon";
+import PlusIcon from "./components/PlusIcon";
+import { getEthPriceNow } from "get-eth-price";
+
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
 let seriesArr = [];
@@ -17,11 +21,13 @@ let currentCollectionAddress = false;
 let totalLoopsNeeded;
 let DBUrl = `http://0.0.0.0:5000/graphql`;
 let initalQueryOffset = 0;
-let address /* = "0x7e99430280a0640a4907ccf9dc16c3d41be6e1ed" */;
+let accountData;
 
 export default function Home() {
   let [updates, setUpdates] = useState(() => null);
+  let [address, setAddress] = useState(() => null);
   let [balance, setBalance] = useState(() => null);
+  let [balanceUSD, setBalanceUSD] = useState(() => null);
   let [NFTS, setNFTS] = useState(() => null);
   let [options, setOptions] = useState(() => {
     return {};
@@ -48,8 +54,22 @@ export default function Home() {
   });
   let [bigseries, setBigSeries] = useState(() => []);
   let [expandGraph, setExpandGraph] = useState(() => false);
+  let [hasAccount, setHasAccount] = useState(() => false);
+  let [loggedIn, setLoggedIn] = useState(() => false);
+  let [addingAddress, setAddingAddress] = useState(() => false);
+  let [addressList, setAddressList] = useState(() => []);
   let value;
   let web3 = new Web3("https://speedy-nodes-nyc.moralis.io/1c58af41ad51021daa7433bb/eth/mainnet");
+
+  let convertToUSD = async function (ETH) {
+    let test;
+    let balUSD;
+    await getEthPriceNow("USD").then((data) => {
+      test = Object.keys(data)[0];
+      balUSD = data[test].ETH.USD * ETH;
+    });
+    return balUSD.toFixed(2);
+  };
 
   let average = (arr) => (arr.reduce((a, b) => a + b) / arr.length).toFixed(0);
 
@@ -426,28 +446,103 @@ export default function Home() {
     };
   };
 
-  let test = function () {
-    fetch("/api/create_account", {
+  let login = async function (email, password) {
+    await findAccount(email, password);
+    console.log(accountData);
+    if (accountData.data.allAccounts.nodes.length == 0) {
+      window.alert("Your email or password is incorrect");
+    } else if (accountData.data.allAccounts.nodes.length == 1) {
+      setLoggedIn(true);
+    }
+  };
+
+  let signUp = async function (email, password) {
+    await createAccount(email, password);
+    if (accountData.errors) {
+      window.alert("This email already has an account associated with it");
+    } else {
+      login(email, password);
+    }
+  };
+
+  let createAccount = async function (email, password) {
+    await fetch("/api/create_account", {
       method: "POST",
       body: JSON.stringify({
         DBUrl: DBUrl,
-        email: "omihridesh2asd@gmail.com",
-        password: "123",
-        addresses: "asdf, asdf, asdsdfg, sderarfg",
+        email: email,
+        password: password,
       }),
-    }).then((response) => {
-      response.json().then((result) => {
-        console.log(result);
+    })
+      .then(async (response) => {
+        await response.json().then((result) => {
+          accountData = result;
+        });
+      })
+      .catch((err) => {
+        return err;
+      });
+  };
+
+  let findAccount = async function (email, password) {
+    await fetch("/api/find_account", {
+      method: "POST",
+      body: JSON.stringify({
+        DBUrl: DBUrl,
+        email: email,
+        password: password,
+      }),
+    })
+      .then(async (response) => {
+        await response.json().then((result) => {
+          accountData = result;
+          if (accountData.data.allAccounts.nodes[0].addresses !== null) {
+            setAddressList(accountData.data.allAccounts.nodes[0].addresses[0].split(","));
+          }
+        });
+      })
+      .catch((err) => {
+        return err;
+      });
+  };
+
+  let updateAccountAddresses = async function (email, addresses) {
+    fetch("/api/update_account_addresses", {
+      method: "POST",
+      body: JSON.stringify({ DBUrl: DBUrl, email: email, addresses: addresses }),
+    }).then((result) => {
+      result.json().then((result) => {
+        return result;
       });
     });
   };
 
+  let addAddress = async function (address) {
+    await findAccount(
+      accountData.data.allAccounts.nodes[0].email,
+      accountData.data.allAccounts.nodes[0].password
+    );
+    if (accountData.data.allAccounts.nodes[0].addresses == null) {
+      await updateAccountAddresses(accountData.data.allAccounts.nodes[0].email, address);
+    } else if (accountData.data.allAccounts.nodes[0].addresses[0].split(",").includes(address)) {
+      window.alert("This address has already been added");
+    } else {
+      accountData.data.allAccounts.nodes[0].addresses.push(address);
+      await updateAccountAddresses(
+        accountData.data.allAccounts.nodes[0].email,
+        accountData.data.allAccounts.nodes[0].addresses
+      );
+    }
+  };
+
   useEffect(() => {
     if (updates) {
-      web3.eth.getBalance(address, (err, bal) => {
+      web3.eth.getBalance(address, async (err, bal) => {
         bal = web3.utils.fromWei(bal.toString(), "ether");
         setBalance(bal);
+        setBalanceUSD(await convertToUSD(bal));
       });
+      getNFTS();
       getBuyPrices();
     }
   });
@@ -463,9 +558,9 @@ export default function Home() {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      {address ? (
+      {loggedIn && address ? (
         <>
-          <div className={styles.container}>
+          <div style={{ zIndex: "3" }} className={styles.container}>
             <div className={`${styles.topLeft} ${styles.card} ${styles.balanceCard}`}>
               <h1 style={{ fontFamily: "playfair display", fontWeight: 900 }}>User Balance:</h1>
               <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
@@ -563,6 +658,7 @@ export default function Home() {
             <div
               className={styles.container}
               style={{
+                zIndex: "3",
                 width: "100vw",
                 height: "100vh",
                 padding: "1rem",
@@ -604,7 +700,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className={styles.smallGraphWrapper}>
+            <div style={{ zIndex: "3" }} className={styles.smallGraphWrapper}>
               <h1>{currentCollection} Avg. Buy price</h1>
               <Chart
                 id="floorPriceChart"
@@ -628,37 +724,158 @@ export default function Home() {
         </>
       ) : (
         <div className={styles.container}>
-          <div className={styles.addrWrapper}>
+          <div className={styles.accountWrapper}>
             <h1 className={styles.nft_tracker_title}>NFT Tracker</h1>
-            <div className={styles.walletAddrInfoWrapper}>
+            <div className={styles.accountInfoWrapper}>
               <input
-                id="walletAddrInput"
-                className={styles.walletAddrInput}
-                type="text"
-                placeholder="Enter Your Wallet Address"
+                id="emailInput"
+                className={styles.accountInfoInput}
+                type="email"
+                placeholder="Enter Your Email Address"
+              />
+              <input
+                id="passwordInput"
+                className={styles.accountInfoInput}
+                type="password"
+                placeholder="Enter Your Password"
               />
               <button
-                onClick={() => {
-                  if (walletAddrInput.value) {
-                    address = walletAddrInput.value;
-                    setUpdates(true);
+                onClick={async () => {
+                  if (emailInput.value && passwordInput.value) {
+                    if (hasAccount == true) {
+                      await login(emailInput.value, passwordInput.value);
+                    } else {
+                      await signUp(emailInput.value, passwordInput.value);
+                    }
                   } else {
-                    window.alert("Please fill out the wallet address");
+                    window.alert("Please fill out the fields");
                   }
                 }}
                 className={`${styles.submitBtn} ${styles.btnBig}`}>
-                SUBMIT
-              </button>
-              <button
-                onClick={() => {
-                  test();
-                }}>
-                test
+                {hasAccount ? "Log In" : "Create Account"}
               </button>
             </div>
+            <h4>
+              {hasAccount ? "Dont have an account? click" : "Already have an account? click"}
+              <button
+                className={styles.logInSignUpBtn}
+                onClick={() => {
+                  hasAccount ? setHasAccount(false) : setHasAccount(true);
+                }}>
+                here
+              </button>
+            </h4>
           </div>
         </div>
       )}
+      {loggedIn ? (
+        <>
+          <div style={{ zIndex: "3" }} className={styles.sidebarWrapper}>
+            <div className={styles.accountsTitleWrapper}>
+              <h1 className={styles.accountsTitle}>Accounts</h1>
+              <CollapseSidebarArrowIcon></CollapseSidebarArrowIcon>
+            </div>
+            <div className={styles.addAddressWrapper}>
+              <button
+                onClick={() => {
+                  setAddingAddress(true);
+                }}
+                className={styles.addAddressBtn}>
+                Add Address
+              </button>
+              <PlusIcon></PlusIcon>
+            </div>
+            {addressList.map((addresses) => {
+              return (
+                <div className={styles.addAddressWrapper}>
+                  <button
+                    style={{
+                      textOverflow: "ellipsis",
+                      width: "inherit",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                    onClick={() => {
+                      setAddress(addresses);
+                      setUpdates(true);
+                    }}
+                    className={styles.addAddressBtn}>
+                    {addresses}
+                  </button>
+                </div>
+              );
+            })}
+            <div className={styles.addressListWrapper}></div>
+            <div className={styles.userBalanceSidebar}>
+              <h1 style={{ fontFamily: "playfair display", fontWeight: 900, fontSize: "30px" }}>
+                Account Balance
+              </h1>
+              <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
+                {balance} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>ETH</b>
+              </h4>
+              <h4 style={{ fontFamily: "roboto slab", fontWeight: 200 }}>
+                {balanceUSD} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>USD</b>
+              </h4>
+            </div>
+          </div>
+          {accountData.data.allAccounts.nodes[0].addresses == null || addingAddress ? (
+            <div
+              style={{ zIndex: "3", position: "absolute", top: "0", width: "100%" }}
+              className={styles.container}>
+              <div className={styles.addressWrapper}>
+                <input
+                  id="walletAddrInput"
+                  className={styles.addrInfoInput}
+                  type="text"
+                  placeholder="Enter Your Wallet Address"
+                />
+                <button
+                  onClick={async () => {
+                    if (walletAddrInput.value) {
+                      if (web3.utils.isAddress(walletAddrInput.value)) {
+                        addAddress(walletAddrInput.value);
+                        if (accountData.data.allAccounts.nodes[0].addresses == null) {
+                          setAddressList([walletAddrInput.value]);
+                        } else {
+                          await findAccount(
+                            accountData.data.allAccounts.nodes[0].email,
+                            accountData.data.allAccounts.nodes[0].password
+                          );
+                          setAddressList(accountData.data.allAccounts.nodes[0].addresses[0].split(","));
+                        }
+                      } else {
+                        window.alert("This Address is not valid");
+                      }
+                    } else {
+                      window.alert("Please fill out the fields");
+                    }
+                  }}
+                  className={`${styles.submitBtn} ${styles.btnBig}`}>
+                  Add Address
+                </button>
+                <button
+                  onClick={() => {
+                    setAddingAddress(false);
+                  }}
+                  className={` ${styles.btnBig}`}>
+                  close
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {!address ? (
+            <div
+              style={{
+                position: "absolute",
+                top: "0",
+                backgroundColor: "rgba(255, 255, 255, 1)",
+                width: "100%",
+                height: "100%",
+                zIndex: "2",
+              }}></div>
+          ) : null}
+        </>
+      ) : null}
     </>
   );
 }

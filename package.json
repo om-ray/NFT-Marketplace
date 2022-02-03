@@ -12,6 +12,7 @@
     "apexcharts": "^3.28.3",
     "db-migrate": "^1.0.0-beta.16",
     "db-migrate-pg": "^1.2.2",
+    "get-eth-price": "^1.0.0",
     "next": "11.1.2",
     "pg": "^8.7.1",
     "postgraphile": "^4.12.5",
