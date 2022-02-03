@@ -787,7 +787,7 @@ export default function Home() {
             </div>
             {addressList.map((addresses) => {
               return (
-                <div className={styles.addAddressWrapper}>
+                <div key={Math.random() * 1000000000000000} className={styles.addAddressWrapper}>
                   <button
                     style={{
                       textOverflow: "ellipsis",
