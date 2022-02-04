@@ -27,6 +27,7 @@ export default function Home() {
   let [updates, setUpdates] = useState(() => null);
   let [address, setAddress] = useState(() => null);
   let [balance, setBalance] = useState(() => null);
+  let [collapseSideBar, setCollapseSideBar] = useState(() => false);
   let [balanceUSD, setBalanceUSD] = useState(() => null);
   let [NFTS, setNFTS] = useState(() => null);
   let [options, setOptions] = useState(() => {
@@ -78,7 +79,7 @@ export default function Home() {
   }
 
   function groupBy(arr, property) {
-    return arr.reduce(function (memo, x) {
+    return arr?.reduce(function (memo, x) {
       if (!memo[x[property]]) {
         memo[x[property]] = [];
       }
@@ -101,7 +102,9 @@ export default function Home() {
       nfts.json().then((nfts) => {
         nfts = groupBy(nfts.result, "name");
         nfts = Object.entries(nfts);
-        setNFTS(nfts);
+        if (nfts) {
+          setNFTS(nfts);
+        }
         console.log("nfts found");
       });
     });
@@ -731,7 +734,7 @@ export default function Home() {
                 id="emailInput"
                 className={styles.accountInfoInput}
                 type="email"
-                placeholder="Enter Your Email Address"
+                placeholder="Enter Your Email"
               />
               <input
                 id="passwordInput"
@@ -768,12 +771,22 @@ export default function Home() {
           </div>
         </div>
       )}
-      {loggedIn ? (
+      {loggedIn && !collapseSideBar ? (
         <>
           <div style={{ zIndex: "3" }} className={styles.sidebarWrapper}>
             <div className={styles.accountsTitleWrapper}>
               <h1 className={styles.accountsTitle}>Accounts</h1>
-              <CollapseSidebarArrowIcon></CollapseSidebarArrowIcon>
+              <button
+                style={{ border: "none", backgroundColor: "rgba(255, 255, 255, 0)" }}
+                onClick={() => {
+                  if (address) {
+                    setCollapseSideBar(true);
+                  } else {
+                    window.alert("Please select an address");
+                  }
+                }}>
+                <CollapseSidebarArrowIcon></CollapseSidebarArrowIcon>
+              </button>
             </div>
             <div className={styles.addAddressWrapper}>
               <button
@@ -857,8 +870,8 @@ export default function Home() {
                   onClick={() => {
                     setAddingAddress(false);
                   }}
-                  className={` ${styles.btnBig}`}>
-                  close
+                  className={` ${styles.btnBig} ${styles.closeBtn}`}>
+                  X
                 </button>
               </div>
             </div>
@@ -875,6 +888,23 @@ export default function Home() {
               }}></div>
           ) : null}
         </>
+      ) : null}
+      {collapseSideBar ? (
+        <button
+          style={{
+            border: "none",
+            backgroundColor: "rgba(255, 255, 255, 0)",
+            zIndex: "9999",
+            position: "absolute",
+            top: "10px",
+            left: "5px",
+            transform: "scaleX(-1)",
+          }}
+          onClick={() => {
+            setCollapseSideBar(false);
+          }}>
+          <CollapseSidebarArrowIcon></CollapseSidebarArrowIcon>
+        </button>
       ) : null}
     </>
   );

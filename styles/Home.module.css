@@ -315,7 +315,7 @@
   align-items: center;
 }
 
-.accountsTitleWrapper > svg {
+.accountsTitleWrapper > button {
   margin: 0px -30px -8px 0px;
 }
 
@@ -371,11 +371,58 @@
     justify-content: space-between;
   }
 
+  .accountInfoInput {
+    width: 60vw;
+  }
+
   .nft_tracker_title {
     font-family: "playfair display";
     font-weight: 900;
-    margin: -15rem 0px 15rem 0px;
+    margin: -7rem 0px 15rem 0px;
     font-size: 3rem;
+  }
+
+  .sidebarWrapper {
+    width: 70%;
+  }
+
+  .userBalanceSidebar {
+    padding: 6rem 0px;
+  }
+
+  .userBalanceSidebar > h1 {
+    font-size: 24px !important;
+  }
+
+  .addressWrapper {
+    position: relative;
+    background-color: white;
+    width: 80%;
+    height: 30%;
+  }
+
+  .addrInfoInput {
+    width: 100%;
+    font-size: 14px;
+    margin-top: 20%;
+    margin-bottom: 0.5rem;
+  }
+
+  .addressWrapper > button {
+    margin: auto !important;
+  }
+
+  .closeBtn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 !important;
+    border-radius: 100% !important;
   }
 
   .accountWrapper {
