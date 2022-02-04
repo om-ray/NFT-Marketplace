@@ -841,6 +841,19 @@ export default function Home() {
                 {balanceUSD} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>USD</b>
               </h4>
             </div>
+            <button
+              style={{
+                position: "absolute",
+                bottom: "0px",
+                margin: "20px",
+              }}
+              onClick={() => {
+                window.sessionStorage.clear();
+                window.location.reload();
+              }}
+              className={styles.addAddressBtn}>
+              Log Out
+            </button>
           </div>
           {accountData.data.allAccounts.nodes[0].addresses == null || addingAddress ? (
             <div
