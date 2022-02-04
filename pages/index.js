@@ -456,8 +456,8 @@ export default function Home() {
       window.alert("Your email or password is incorrect");
     } else if (accountData.data.allAccounts.nodes.length == 1) {
       if (window) {
-        window.localStorage.setItem("email", email);
-        window.localStorage.setItem("password", password);
+        window.sessionStorage.setItem("email", email);
+        window.sessionStorage.setItem("password", password);
       }
       setLoggedIn(true);
     }
@@ -544,8 +544,8 @@ export default function Home() {
 
   useEffect(() => {
     if (window && !loggedIn) {
-      let email = window.localStorage.getItem("email");
-      let password = window.localStorage.getItem("password");
+      let email = window.sessionStorage.getItem("email");
+      let password = window.sessionStorage.getItem("password");
       if (email && password) {
         login(email, password);
       }
