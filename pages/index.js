@@ -455,6 +455,10 @@ export default function Home() {
     if (accountData.data.allAccounts.nodes.length == 0) {
       window.alert("Your email or password is incorrect");
     } else if (accountData.data.allAccounts.nodes.length == 1) {
+      if (window) {
+        window.localStorage.setItem("email", email);
+        window.localStorage.setItem("password", password);
+      }
       setLoggedIn(true);
     }
   };
@@ -539,6 +543,13 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (window && !loggedIn) {
+      let email = window.localStorage.getItem("email");
+      let password = window.localStorage.getItem("password");
+      if (email && password) {
+        login(email, password);
+      }
+    }
     if (updates) {
       web3.eth.getBalance(address, async (err, bal) => {
         bal = web3.utils.fromWei(bal.toString(), "ether");
@@ -856,6 +867,7 @@ export default function Home() {
                           );
                           setAddressList(accountData.data.allAccounts.nodes[0].addresses[0].split(","));
                         }
+                        walletAddrInput.value = "";
                       } else {
                         window.alert("This Address is not valid");
                       }
