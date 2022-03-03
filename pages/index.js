@@ -8,6 +8,7 @@ import MinimizeIcon from "./components/MinimizeIcon";
 import CollapseSidebarArrowIcon from "./components/CollapseSidebarArrowIcon";
 import PlusIcon from "./components/PlusIcon";
 import { getEthPriceNow } from "get-eth-price";
+import { useUser } from "@auth0/nextjs-auth0";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 let timeArr = [];
@@ -24,6 +25,7 @@ let initalQueryOffset = 0;
 let accountData;
 
 export default function Home() {
+  let { user, error, isLoading } = useUser();
   let [updates, setUpdates] = useState(() => null);
   let [address, setAddress] = useState(() => null);
   let [balance, setBalance] = useState(() => null);
@@ -449,36 +451,35 @@ export default function Home() {
     };
   };
 
-  let login = async function (email, password) {
-    await findAccount(email, password);
-    console.log(accountData);
-    if (accountData.data.allAccounts.nodes.length == 0) {
-      window.alert("Your email or password is incorrect");
-    } else if (accountData.data.allAccounts.nodes.length == 1) {
-      if (window) {
-        window.sessionStorage.setItem("email", email);
-        window.sessionStorage.setItem("password", password);
-      }
-      setLoggedIn(true);
-    }
-  };
+  // let login = async function (email, password) {
+  //   await findAccount(email, password);
+  //   console.log(accountData);
+  //   if (accountData.data.allAccounts.nodes.length == 0) {
+  //     window.alert("Your email or password is incorrect");
+  //   } else if (accountData.data.allAccounts.nodes.length == 1) {
+  //     if (window) {
+  //       window.sessionStorage.setItem("email", email);
+  //       window.sessionStorage.setItem("password", password);
+  //     }
+  //     setLoggedIn(true);
+  //   }
+  // };
 
-  let signUp = async function (email, password) {
-    await createAccount(email, password);
-    if (accountData.errors) {
-      window.alert("This email already has an account associated with it");
-    } else {
-      login(email, password);
-    }
-  };
+  // let signUp = async function (email, password) {
+  //   await createAccount(email, password);
+  //   if (accountData.errors) {
+  //     window.alert("This email already has an account associated with it");
+  //   } else {
+  //     login(email, password);
+  //   }
+  // };
 
-  let createAccount = async function (email, password) {
+  let createAccount = async function () {
     await fetch("/api/create_account", {
       method: "POST",
       body: JSON.stringify({
         DBUrl: DBUrl,
-        email: email,
-        password: password,
+        user_id: user.sub,
       }),
     })
       .then(async (response) => {
@@ -491,13 +492,12 @@ export default function Home() {
       });
   };
 
-  let findAccount = async function (email, password) {
+  let findAccount = async function () {
     await fetch("/api/find_account", {
       method: "POST",
       body: JSON.stringify({
         DBUrl: DBUrl,
-        email: email,
-        password: password,
+        user_id: user.sub,
       }),
     })
       .then(async (response) => {
@@ -513,10 +513,10 @@ export default function Home() {
       });
   };
 
-  let updateAccountAddresses = async function (email, addresses) {
+  let updateAccountAddresses = async function (addresses) {
     fetch("/api/update_account_addresses", {
       method: "POST",
-      body: JSON.stringify({ DBUrl: DBUrl, email: email, addresses: addresses }),
+      body: JSON.stringify({ DBUrl: DBUrl, user_id: user.sub, addresses: addresses }),
     }).then((result) => {
       result.json().then((result) => {
         return result;
@@ -525,31 +525,33 @@ export default function Home() {
   };
 
   let addAddress = async function (address) {
-    await findAccount(
-      accountData.data.allAccounts.nodes[0].email,
-      accountData.data.allAccounts.nodes[0].password
-    );
+    await findAccount();
     if (accountData.data.allAccounts.nodes[0].addresses == null) {
-      await updateAccountAddresses(accountData.data.allAccounts.nodes[0].email, address);
+      await updateAccountAddresses(address);
     } else if (accountData.data.allAccounts.nodes[0].addresses[0].split(",").includes(address)) {
       window.alert("This address has already been added");
     } else {
       accountData.data.allAccounts.nodes[0].addresses.push(address);
-      await updateAccountAddresses(
-        accountData.data.allAccounts.nodes[0].email,
-        accountData.data.allAccounts.nodes[0].addresses
-      );
+      await updateAccountAddresses(accountData.data.allAccounts.nodes[0].addresses);
     }
   };
 
-  useEffect(() => {
-    if (window && !loggedIn) {
-      let email = window.sessionStorage.getItem("email");
-      let password = window.sessionStorage.getItem("password");
-      if (email && password) {
-        login(email, password);
-      }
+  useEffect(async () => {
+    // if (window && !loggedIn) {
+    //   let email = window.sessionStorage.getItem("email");
+    //   let password = window.sessionStorage.getItem("password");
+    //   if (email && password) {
+    //     login(email, password);
+    //   }
+    // }
+
+    if (user) {
+      await findAccount();
+      setLoggedIn(true);
     }
+  }, [user]);
+
+  useEffect(() => {
     if (updates) {
       web3.eth.getBalance(address, async (err, bal) => {
         bal = web3.utils.fromWei(bal.toString(), "ether");
@@ -740,7 +742,16 @@ export default function Home() {
         <div className={styles.container}>
           <div className={styles.accountWrapper}>
             <h1 className={styles.nft_tracker_title}>NFT Tracker</h1>
-            <div className={styles.accountInfoWrapper}>
+            <button
+              className={styles.card}
+              style={{
+                padding: "1rem 2rem",
+                fontFamily: "roboto Slab",
+                backgroundColor: "rgba(255,255,255,0)",
+              }}>
+              <a href="/api/auth/login">Login</a>
+            </button>
+            {/* <div className={styles.accountInfoWrapper}>
               <input
                 id="emailInput"
                 className={styles.accountInfoInput}
@@ -778,7 +789,7 @@ export default function Home() {
                 }}>
                 here
               </button>
-            </h4>
+            </h4> */}
           </div>
         </div>
       )}
@@ -841,19 +852,6 @@ export default function Home() {
                 {balanceUSD} <b style={{ fontFamily: "playfair display", fontWeight: 900 }}>USD</b>
               </h4>
             </div>
-            <button
-              style={{
-                position: "absolute",
-                bottom: "0px",
-                margin: "20px",
-              }}
-              onClick={() => {
-                window.sessionStorage.clear();
-                window.location.reload();
-              }}
-              className={styles.addAddressBtn}>
-              Log Out
-            </button>
           </div>
           {accountData.data.allAccounts.nodes[0].addresses == null || addingAddress ? (
             <div

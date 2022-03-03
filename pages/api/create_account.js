@@ -6,12 +6,10 @@ export default function handler(req, res) {
     body: JSON.stringify({
       query: `mutation MyMutation {
         createAccount(
-          input: {account: {email: "${req.body.email}", password: "${req.body.password}"}}
+          input: {account: {userId:"${req.body.user_id}"}}
         ){
           account {
             addresses
-            email
-            password
           }
         }
       }

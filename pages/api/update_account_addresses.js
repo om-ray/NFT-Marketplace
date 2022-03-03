@@ -5,14 +5,13 @@ export default function handler(req, res) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: `mutation MyMutation {
-        updateAccountByEmail(input: {accountPatch: {addresses: "${req.body.addresses}"}, email: "${req.body.email}"}) {
+        updateAccountByUserId(input: {accountPatch: {addresses: "${req.body.addresses}"}, userId:"${req.body.user_id}"}) {
           account {
-            email
-            password
             addresses
           }
         }
-      }`,
+      }
+      `,
     }),
   })
     .then((response) => {

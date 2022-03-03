@@ -5,10 +5,8 @@ export default function handler(req, res) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: `query MyQuery {
-        allAccounts(condition: {email: "${req.body.email}", password: "${req.body.password}"}) {
+        allAccounts(condition: {userId:"${req.body.user_id}"}) {
           nodes {
-            email
-            password
             addresses
           }
         }
