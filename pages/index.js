@@ -547,6 +547,7 @@ export default function Home() {
 
     if (user) {
       await findAccount();
+      console.log(process.env.AUTH0_SECRET);
       setLoggedIn(true);
     }
   }, [user]);
