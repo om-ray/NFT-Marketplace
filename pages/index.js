@@ -750,7 +750,6 @@ export default function Home() {
                 backgroundColor: "rgba(255,255,255,0)",
               }}>
               <a href="/api/auth/login">Login</a>
-              {console.log(process.env.AUTH0_SECRET)}
             </button>
             {/* <div className={styles.accountInfoWrapper}>
               <input
